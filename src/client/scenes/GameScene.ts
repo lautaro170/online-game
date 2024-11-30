@@ -10,16 +10,19 @@
 import Phaser from "phaser";
 import { Room, Client } from "colyseus.js";
 import { BACKEND_URL } from "../backend";
+import {PlayerSchema} from "../../server/state/MyRoomState";
+import {Player} from "../../shared/entities/Player";
+import {PlayerFactory} from "../../shared/factories/PlayerFactory";
+import {PlayerClient} from "../entities/PlayerClient";
 
 export class GameScene extends Phaser.Scene {
     room: Room;
 
-    currentPlayer: Phaser.Types.Physics.Arcade.ImageWithDynamicBody;
-    playerEntities: { [sessionId: string]: Phaser.Types.Physics.Arcade.ImageWithDynamicBody } = {};
+    currentPlayer: PlayerClient;
+    playerEntities: { [sessionId: string]: PlayerClient } = {};
 
     debugFPS: Phaser.GameObjects.Text;
 
-    localRef: Phaser.GameObjects.Rectangle;
     remoteRef: Phaser.GameObjects.Rectangle;
 
     cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -48,37 +51,29 @@ export class GameScene extends Phaser.Scene {
         // connect with the room
         await this.connect();
 
-        this.room.state.players.onAdd((player, sessionId) => {
-            const entity = this.physics.add.image(player.x, player.y, 'ship_0001');
-            this.playerEntities[sessionId] = entity;
+        this.room.state.players.onAdd((playerSchema :PlayerSchema, sessionId) => {
+
+            const player = PlayerFactory.createPlayer(playerSchema);
+            const playerClient = new PlayerClient(this, player);
+           //const entity = this.physics.add.image(playerSchema.x, playerSchema.y, 'ship_0001');
+            this.playerEntities[sessionId] = playerClient;
 
             // is current player
             if (sessionId === this.room.sessionId) {
-                this.currentPlayer = entity;
+                this.currentPlayer = playerClient;
 
-                this.localRef = this.add.rectangle(0, 0, entity.width, entity.height);
-                this.localRef.setStrokeStyle(1, 0x00ff00);
-
-                this.remoteRef = this.add.rectangle(0, 0, entity.width, entity.height);
-                this.remoteRef.setStrokeStyle(1, 0xff0000);
-
-                player.onChange(() => {
-                    this.remoteRef.x = player.x;
-                    this.remoteRef.y = player.y;
+                playerSchema.onChange(() => {
+                    playerClient.player = PlayerFactory.createPlayer(playerSchema);;
+                    playerClient.update();
                 });
 
             } else {
                 // listening for server updates
-                player.onChange(() => {
-                    //
-                    // we're going to LERP the positions during the render loop.
-                    //
-                    entity.setData('serverX', player.x);
-                    entity.setData('serverY', player.y);
+                playerSchema.onChange(() => {
+                    playerClient.player = PlayerFactory.createPlayer(playerSchema);;
+                    playerClient.update();
                 });
-
             }
-
         });
 
         // remove local reference when entity is removed from the server
@@ -133,11 +128,6 @@ export class GameScene extends Phaser.Scene {
     fixedTick(time, delta) {
         this.currentTick++;
 
-        // const currentPlayerRemote = this.room.state.players.get(this.room.sessionId);
-        // const ticksBehind = this.currentTick - currentPlayerRemote.tick;
-        // console.log({ ticksBehind });
-
-        const velocity = 2;
         this.inputPayload.left = this.cursorKeys.left.isDown;
         this.inputPayload.right = this.cursorKeys.right.isDown;
         this.inputPayload.up = this.cursorKeys.up.isDown;
@@ -145,36 +135,33 @@ export class GameScene extends Phaser.Scene {
         this.inputPayload.tick = this.currentTick;
         this.room.send(0, this.inputPayload);
 
-        if (this.inputPayload.left) {
-            this.currentPlayer.x -= velocity;
 
-        } else if (this.inputPayload.right) {
-            this.currentPlayer.x += velocity;
+        this.currentPlayer.player.addInput(this.inputPayload);
+        this.currentPlayer.player.processInputQueue();
+
+        if(Phaser.Input.Keyboard.JustDown(this.cursorKeys.space)){
+            this.handleSwordSwing();
         }
 
-        if (this.inputPayload.up) {
-            this.currentPlayer.y -= velocity;
-
-        } else if (this.inputPayload.down) {
-            this.currentPlayer.y += velocity;
-        }
-
-        this.localRef.x = this.currentPlayer.x;
-        this.localRef.y = this.currentPlayer.y;
+        this.currentPlayer.update();
 
         for (let sessionId in this.playerEntities) {
-            // interpolate all player entities
-            // (except the current player)
+            // interpolate all player entities, but current player
             if (sessionId === this.room.sessionId) {
                 continue;
             }
-
-            const entity = this.playerEntities[sessionId];
-            const { serverX, serverY } = entity.data.values;
-
-            entity.x = Phaser.Math.Linear(entity.x, serverX, 0.2);
-            entity.y = Phaser.Math.Linear(entity.y, serverY, 0.2);
+            this.playerEntities[sessionId].update();
         }
+    }
+
+    handleSwordSwing() {
+        if (!this.currentPlayer) return;
+        console.log("trying to swing sword");
+        this.currentPlayer.playAttackAnimation();
+        console.log("swordSwing");
+        this.room.send("swordSwing", {});
+
 
     }
+
 }
