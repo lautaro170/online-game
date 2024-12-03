@@ -7,6 +7,8 @@ export interface InputData {
     right: false;
     up: false;
     down: false;
+    mouseX: number;
+    mouseY: number;
     tick: number;
 }
 
@@ -27,6 +29,7 @@ export class PlayerSchema extends Schema {
     @type("number") x: number;
     @type("number") y: number;
     @type("number") hp: number;
+    @type("number") rotation: number;
     @type("number") tick: number;
     @type([ItemSchema]) inventory: ItemSchema[] = [];
 
@@ -36,6 +39,7 @@ export class PlayerSchema extends Schema {
         this.x = player.x;
         this.y = player.y;
         this.hp = player.hp;
+        this.rotation = player.rotation;
         this.tick = player.inputQueue.length > 0 ? player.inputQueue[player.inputQueue.length - 1].tick : this.tick;
         this.inventory = player.inventory.map(item => {
             const itemSchema = new ItemSchema(item.name);

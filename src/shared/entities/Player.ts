@@ -6,6 +6,8 @@ export interface InputData{
     right: boolean;
     up: boolean;
     down: boolean;
+    mouseX: number;
+    mouseY: number;
     tick: number;
 }
 
@@ -13,6 +15,7 @@ export interface InputData{
 export class Player{
     x: number;
     y: number;
+    rotation: number;
     hp: number;
     velocity: number;
     inputQueue: InputData[];
@@ -23,6 +26,7 @@ export class Player{
         this.x = x;
         this.y = y;
         this.hp = 100;
+        this.rotation = 0;
         this.velocity = 10;
         this.tick = 0;
         this.inputQueue = [];
@@ -51,6 +55,9 @@ export class Player{
             }else if(input.down){
                 this.y += this.velocity;
             }
+
+            //make the player look at the direction of the mouse based on input.mouseX and input.mouseY
+            this.rotation = Math.atan2(input.mouseY - this.y, input.mouseX - this.x);
 
             this.tick = input.tick;
         }

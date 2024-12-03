@@ -26,12 +26,13 @@ export class GameScene extends Phaser.Scene {
     remoteRef: Phaser.GameObjects.Rectangle;
 
     cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
-
     inputPayload = {
         left: false,
         right: false,
         up: false,
         down: false,
+        mouseX: 0,
+        mouseY: 0,
         tick: undefined,
     };
 
@@ -63,14 +64,14 @@ export class GameScene extends Phaser.Scene {
                 this.currentPlayer = playerClient;
 
                 playerSchema.onChange(() => {
-                    playerClient.player = PlayerFactory.createPlayer(playerSchema);;
+                    playerClient.player = PlayerFactory.createPlayer(playerSchema);
                     playerClient.update();
                 });
 
             } else {
                 // listening for server updates
                 playerSchema.onChange(() => {
-                    playerClient.player = PlayerFactory.createPlayer(playerSchema);;
+                    playerClient.player = PlayerFactory.createPlayer(playerSchema);
                     playerClient.update();
                 });
             }
@@ -82,6 +83,13 @@ export class GameScene extends Phaser.Scene {
             if (entity) {
                 entity.destroy();
                 delete this.playerEntities[sessionId]
+            }
+        });
+
+        this.room.onMessage("swordSwing", (message) => {
+            const playerClient = this.playerEntities[message.sessionId];
+            if (playerClient) {
+                playerClient.playAttackAnimation();
             }
         });
 
@@ -133,7 +141,10 @@ export class GameScene extends Phaser.Scene {
         this.inputPayload.up = this.cursorKeys.up.isDown;
         this.inputPayload.down = this.cursorKeys.down.isDown;
         this.inputPayload.tick = this.currentTick;
+        this.inputPayload.mouseX = this.input.mousePointer.x;
+        this.inputPayload.mouseY = this.input.mousePointer.y;
         this.room.send(0, this.inputPayload);
+
 
 
         this.currentPlayer.player.addInput(this.inputPayload);

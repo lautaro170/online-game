@@ -29,24 +29,46 @@ export class MyRoom extends Room<MyRoomState> {
 
         this.onMessage("swordSwing", (client, message) => {
             console.log("starting swordSwing server")
-            const player = this.state.players.get(client.sessionId);
-            if (!player) return;
+            const attackerPlayerSchema = this.state.players.get(client.sessionId);
+            if (!attackerPlayerSchema) return;
 
-            const playerEntity = PlayerFactory.createPlayer(player);
-            if (playerEntity.swingSword()) {
-                this.state.players.forEach((target, sessionId) => {
+            const attackerPlayer = PlayerFactory.createPlayer(attackerPlayerSchema);
+            if (attackerPlayer.swingSword()) {
+                this.state.players.forEach((targetPlayerSchema, sessionId) => {
                     if (sessionId === client.sessionId) return;
 
-                    const targetEntity = PlayerFactory.createPlayer(target);
-                    const distance = this.distanceBetweenPlayers(playerEntity, targetEntity);
+                    const targetPlayer = PlayerFactory.createPlayer(targetPlayerSchema);
+                    const distance = this.distanceBetweenPlayers(attackerPlayer, targetPlayer);
                     console.log("distance", distance);
-                    if (distance <= 15/*range*/ ) {
-                        target.hp -= 10;//damage
-                        target.fromPlayer(targetEntity);
-                        console.log("Player", client.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", target.hp);
+                    if (distance <= Sword.baseRange + 30) {
+                        // Calculate the angle between the attacker and the target
+                        const angleToTarget = Math.atan2(targetPlayer.y - attackerPlayer.y, targetPlayer.x - attackerPlayer.x);
+                        const angleDifference = ((angleToTarget - attackerPlayer.rotation + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+                        // Check if the target is within the sword's swing angle
+                        if (Math.abs(angleDifference) <= (Sword.baseSwingAngle / 2) * (Math.PI / 180)) {
+                            targetPlayer.hp -= Sword.baseDamage;
+
+                            // Calculate knockback based on distance and attacker's rotation
+                            const maxKnockback = 50; // Maximum knockback value
+                            const knockback = maxKnockback * (1 - (distance / (Sword.baseRange + 20)));
+                            const knockbackX = Math.cos(attackerPlayer.rotation) * knockback;
+                            const knockbackY = Math.sin(attackerPlayer.rotation) * knockback;
+
+                            // Apply knockback to the target
+                            targetPlayer.x += knockbackX;
+                            targetPlayer.y += knockbackY;
+                            targetPlayerSchema.fromPlayer(targetPlayer);
+
+                            console.log("Player", client.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.hp);
+                            if(targetPlayer.hp <= 0){
+                                this.handlePlayerDeath(targetPlayerSchema);
+                            }
+                        }
                     }
                 });
             }
+            this.broadcast("swordSwing", { sessionId: client.sessionId });
         });
 
 
@@ -96,4 +118,14 @@ export class MyRoom extends Room<MyRoomState> {
     distanceBetweenPlayers(player1: Player, player2: Player): number {
         return Math.sqrt(Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2));
     }
+
+    handlePlayerDeath(playerSchema: PlayerSchema) {
+        const player = PlayerFactory.createPlayer(playerSchema);
+        player.x = Math.random() * this.state.mapWidth;
+        player.y = Math.random() * this.state.mapHeight;
+        player.hp = 100;
+        playerSchema.fromPlayer(player);
+        console.log("Player", "died and respawned!");
+    }
+
 }

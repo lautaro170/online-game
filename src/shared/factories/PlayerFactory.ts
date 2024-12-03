@@ -5,6 +5,8 @@ import {ItemFactory} from "./ItemFactory";
 export class PlayerFactory {
     static createPlayer(playerSchema :PlayerSchema):Player {
         const player = new Player(playerSchema.x, playerSchema.y);
+        player.hp = playerSchema.hp;
+        player.rotation = playerSchema.rotation;
         player.inputQueue = playerSchema.inputQueue ?? [];
 
         playerSchema.inventory.map( itemSchema => {
