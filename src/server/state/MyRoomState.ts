@@ -1,6 +1,34 @@
-import { MapSchema, Schema, type } from "@colyseus/schema";
+import {ArraySchema, MapSchema, Schema, type} from "@colyseus/schema";
 import {Player} from "../../shared/entities/Player";
 import {Item} from "../../shared/entities/Item";
+import {Arrow} from "../../shared/entities/Arrow";
+import {v4 as uuidv4} from "uuid";
+
+export class ArrowSchema extends Schema {
+    @type("string") id: string;
+    @type("number") x: number;
+    @type("number") y: number;
+    @type("number") rotation: number;
+    @type("string") ownerId: string;
+
+    constructor() {
+        super();
+        this.id = uuidv4();
+    }
+    static fromArrow(arrow: Arrow):ArrowSchema {
+        let arrowSchema =  new ArrowSchema();
+        arrowSchema.fromArrow(arrow);
+        return arrowSchema;
+    }
+
+    fromArrow(arrow: Arrow) {
+        this.x = arrow.x;
+        this.y = arrow.y;
+        this.rotation = arrow.rotation;
+        this.ownerId = arrow.ownerId;
+    }
+}
+
 
 export interface InputData {
     left: false;
@@ -26,6 +54,7 @@ export class ItemSchema extends Schema {
 }
 
 export class PlayerSchema extends Schema {
+    @type("string") sessionId: string;
     @type("number") x: number;
     @type("number") y: number;
     @type("number") hp: number;
@@ -36,6 +65,7 @@ export class PlayerSchema extends Schema {
     inputQueue: InputData[] = [];
 
     fromPlayer(player: Player) {
+        this.sessionId = player.sessionId;
         this.x = player.x;
         this.y = player.y;
         this.hp = player.hp;
@@ -56,5 +86,7 @@ export class MyRoomState extends Schema {
     @type("number") mapHeight: number;
 
     @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+    @type([ArrowSchema]) arrows = new ArraySchema<ArrowSchema>();
+
 
 }

@@ -1,5 +1,6 @@
 import {Item} from "./Item";
 import {Sword} from "./Sword";
+import {Bow} from "./Bow";
 
 export interface InputData{
     left: boolean;
@@ -13,6 +14,7 @@ export interface InputData{
 
 
 export class Player{
+    sessionId: string;
     x: number;
     y: number;
     rotation: number;
@@ -21,6 +23,7 @@ export class Player{
     inputQueue: InputData[];
     tick: number;
     inventory: Item[];
+    bow: Bow;
 
     constructor(x:number, y:number){
         this.x = x;
@@ -31,6 +34,8 @@ export class Player{
         this.tick = 0;
         this.inputQueue = [];
         this.inventory = [];
+        this.bow = new Bow();
+
     }
 
     //add a new input to the queue

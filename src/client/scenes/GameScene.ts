@@ -8,19 +8,20 @@
  */
 
 import Phaser from "phaser";
-import { Room, Client } from "colyseus.js";
-import { BACKEND_URL } from "../backend";
-import {PlayerSchema} from "../../server/state/MyRoomState";
-import {Player} from "../../shared/entities/Player";
+import {Client, Room} from "colyseus.js";
+import {BACKEND_URL} from "../backend";
+import {ArrowSchema, PlayerSchema} from "../../server/state/MyRoomState";
 import {PlayerFactory} from "../../shared/factories/PlayerFactory";
 import {PlayerClient} from "../entities/PlayerClient";
+import {ArrowClient} from "../entities/ArrowClient";
+import {ArrowFactory} from "../../shared/factories/ArrowFactory";
 
 export class GameScene extends Phaser.Scene {
     room: Room;
 
     currentPlayer: PlayerClient;
     playerEntities: { [sessionId: string]: PlayerClient } = {};
-
+    arrowsEntities: { [ownerId: string]: ArrowClient } = {};
     debugFPS: Phaser.GameObjects.Text;
 
     remoteRef: Phaser.GameObjects.Rectangle;
@@ -56,7 +57,6 @@ export class GameScene extends Phaser.Scene {
 
             const player = PlayerFactory.createPlayer(playerSchema);
             const playerClient = new PlayerClient(this, player);
-           //const entity = this.physics.add.image(playerSchema.x, playerSchema.y, 'ship_0001');
             this.playerEntities[sessionId] = playerClient;
 
             // is current player
@@ -90,6 +90,32 @@ export class GameScene extends Phaser.Scene {
             const playerClient = this.playerEntities[message.sessionId];
             if (playerClient) {
                 playerClient.playAttackAnimation();
+            }
+        });
+
+        this.room.state.arrows.onAdd((arrowSchema : ArrowSchema) => {
+            const arrow = ArrowFactory.createArrow(arrowSchema);
+            const arrowClient = new ArrowClient(this, arrow);
+            console.log("arrow added", arrowSchema.id);
+
+            this.arrowsEntities[arrowSchema.id] = arrowClient;
+
+            arrowSchema.onChange(() => {
+                arrowClient.arrow = ArrowFactory.createArrow(arrowSchema);
+                arrowClient.update();
+            });
+        });
+
+        this.room.state.arrows.onRemove((arrowSchema: ArrowSchema) => {
+            const arrow = this.arrowsEntities[arrowSchema.id];
+            console.log(this.arrowsEntities)
+            console.log("arrow removed", arrowSchema.id);
+            if (arrow) {
+                console.log("destroying arrow", arrowSchema.id);
+                arrow.destroy();
+                console.log(this.arrowsEntities)
+                delete this.arrowsEntities[arrowSchema.id];
+                console.log(this.arrowsEntities)
             }
         });
 
@@ -154,6 +180,10 @@ export class GameScene extends Phaser.Scene {
             this.handleSwordSwing();
         }
 
+        if(Phaser.Input.Keyboard.JustDown(this.cursorKeys.shift)){
+            this.handleBowShot();
+        }
+
         this.currentPlayer.update();
 
         for (let sessionId in this.playerEntities) {
@@ -163,6 +193,10 @@ export class GameScene extends Phaser.Scene {
             }
             this.playerEntities[sessionId].update();
         }
+
+        for(let arrowId in this.arrowsEntities){
+            this.arrowsEntities[arrowId].update();
+        }
     }
 
     handleSwordSwing() {
@@ -171,8 +205,15 @@ export class GameScene extends Phaser.Scene {
         this.currentPlayer.playAttackAnimation();
         console.log("swordSwing");
         this.room.send("swordSwing", {});
-
-
     }
+
+    handleBowShot() {
+        if (!this.currentPlayer) return;
+        console.log("trying to shoot bow");
+        //this.currentPlayer.shootBow();
+        console.log("bowShot");
+        this.room.send("bowShot", {});
+    }
+
 
 }

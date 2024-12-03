@@ -1,10 +1,11 @@
 import { Room, Client } from "colyseus";
 import { Schema, type } from "@colyseus/schema";
-import {InputData, MyRoomState, PlayerSchema} from "../state/MyRoomState";
+import {ArrowSchema, InputData, MyRoomState, PlayerSchema} from "../state/MyRoomState";
 import {Player} from "../../shared/entities/Player";
 import {PlayerFactory} from "../../shared/factories/PlayerFactory";
 import {Sword} from "../../shared/entities/Sword";
 import {setItem} from "colyseus.js/lib/Storage";
+import {Arrow} from "../../shared/entities/Arrow";
 
 class State extends Schema {
 }
@@ -25,6 +26,20 @@ export class MyRoom extends Room<MyRoomState> {
 
             // enqueue input to user input buffer.
             player.inputQueue.push(input);
+        });
+
+        this.onMessage("bowShot", (client, message) => {
+            const playerSchema = this.state.players.get(client.sessionId);
+            if (!playerSchema) return;
+
+            const player = PlayerFactory.createPlayer(playerSchema);
+            if (player.bow.canShoot()) {
+                const arrow = new Arrow(player.x, player.y, player.rotation, client.sessionId);
+                const arrowSchema = ArrowSchema.fromArrow(arrow);
+                this.state.arrows.push(arrowSchema);
+                console.log("added arrow id", arrowSchema.id);
+                console.log("Player", client.sessionId, "shot an arrow!");
+            }
         });
 
         this.onMessage("swordSwing", (client, message) => {
@@ -87,10 +102,30 @@ export class MyRoom extends Room<MyRoomState> {
     fixedTick(timeStep: number) {
 
         this.state.players.forEach(playerSchema => {
-
             const player = PlayerFactory.createPlayer(playerSchema);
             player.processInputQueue();
             playerSchema.fromPlayer(player);
+        });
+
+        this.state.arrows.forEach((arrowSchema, index) => {
+            const arrow = new Arrow(arrowSchema.x, arrowSchema.y, arrowSchema.rotation, arrowSchema.ownerId);
+            arrow.update(timeStep / 1000);
+            arrowSchema.fromArrow(arrow);
+
+            this.state.players.forEach(playerSchema => {
+                const player = PlayerFactory.createPlayer(playerSchema);
+                if (arrow.ownerId !== playerSchema.sessionId && arrow.checkCollision(player)) {
+                    player.hp -= arrow.damage;
+                    playerSchema.fromPlayer(player);
+                    this.state.arrows.splice(index, 1);
+                    console.log("Arrow hit player", playerSchema.sessionId, "for", arrow.damage, "damage!");
+                    if(playerSchema.hp <= 0){
+                        this.handlePlayerDeath(playerSchema);
+                    }
+
+                }
+            });
+
         });
     }
 
@@ -98,6 +133,7 @@ export class MyRoom extends Room<MyRoomState> {
         console.log(client.sessionId, "joined!");
         const player = new Player(Math.random() * this.state.mapWidth, Math.random() * this.state.mapHeight);
         player.addItem(new Sword());
+        player.sessionId = client.sessionId;
 
 
         const playerSchema = new PlayerSchema();

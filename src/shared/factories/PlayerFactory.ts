@@ -8,6 +8,7 @@ export class PlayerFactory {
         player.hp = playerSchema.hp;
         player.rotation = playerSchema.rotation;
         player.inputQueue = playerSchema.inputQueue ?? [];
+        player.sessionId = playerSchema.sessionId;
 
         playerSchema.inventory.map( itemSchema => {
             const item = ItemFactory.createItem(itemSchema.name);
