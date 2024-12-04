@@ -1,6 +1,6 @@
 import {PlayerSchema} from "../../server/state/MyRoomState";
 import {Player} from "../entities/Player";
-import {ItemFactory} from "./ItemFactory";
+import {InventoryFactory} from "./InventoryFactory";
 
 export class PlayerFactory {
     static createPlayer(playerSchema :PlayerSchema):Player {
@@ -9,11 +9,8 @@ export class PlayerFactory {
         player.rotation = playerSchema.rotation;
         player.inputQueue = playerSchema.inputQueue ?? [];
         player.sessionId = playerSchema.sessionId;
+        player.inventory = InventoryFactory.createInventory(playerSchema.inventory);
 
-        playerSchema.inventory.map( itemSchema => {
-            const item = ItemFactory.createItem(itemSchema.name);
-            player.addItem(item);
-        } )
 
         return player;
     }

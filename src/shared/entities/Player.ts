@@ -1,6 +1,7 @@
 import {Item} from "./Item";
 import {Sword} from "./Sword";
 import {Bow} from "./Bow";
+import {Inventory} from "./Inventory";
 
 export interface InputData{
     left: boolean;
@@ -10,6 +11,7 @@ export interface InputData{
     mouseX: number;
     mouseY: number;
     tick: number;
+    selectedItemIndex: number;
 }
 
 
@@ -22,8 +24,8 @@ export class Player{
     velocity: number;
     inputQueue: InputData[];
     tick: number;
-    inventory: Item[];
-    bow: Bow;
+    inventory: Inventory = new Inventory();
+    bow: Bow = new Bow();
 
     constructor(x:number, y:number){
         this.x = x;
@@ -33,8 +35,8 @@ export class Player{
         this.velocity = 10;
         this.tick = 0;
         this.inputQueue = [];
-        this.inventory = [];
-        this.bow = new Bow();
+        this.inventory.addItem(new Item("Sword"), 0);
+        this.inventory.addItem(new Item("Bow"), 1);
 
     }
 
@@ -63,20 +65,21 @@ export class Player{
 
             //make the player look at the direction of the mouse based on input.mouseX and input.mouseY
             this.rotation = Math.atan2(input.mouseY - this.y, input.mouseX - this.x);
-
+            this.inventory.selectItem(input.selectedItemIndex);
             this.tick = input.tick;
         }
     }
 
-    addItem(item: Item) {
-        this.inventory.push(item);
+    addItem(item: Item, index: number) {
+        this.inventory.addItem(item, index);
     }
 
-    removeItem(item: Item) {
-        const index = this.inventory.indexOf(item);
-        if (index > -1) {
-            this.inventory.splice(index, 1);
-        }
+    getSelectedItem(): Item | null {
+        return this.inventory.getSelectedItem();
+    }
+
+    selectItem(index: number) {
+        this.inventory.selectItem(index);
     }
 
     swingSword(): boolean {

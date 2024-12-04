@@ -35,6 +35,7 @@ export class GameScene extends Phaser.Scene {
         mouseX: 0,
         mouseY: 0,
         tick: undefined,
+        selectedItemIndex:0
     };
 
     elapsedTime = 0;
@@ -53,10 +54,11 @@ export class GameScene extends Phaser.Scene {
         // connect with the room
         await this.connect();
 
+
         this.room.state.players.onAdd((playerSchema :PlayerSchema, sessionId) => {
 
             const player = PlayerFactory.createPlayer(playerSchema);
-            const playerClient = new PlayerClient(this, player);
+            const playerClient = new PlayerClient(this, player, this.room.sessionId);
             this.playerEntities[sessionId] = playerClient;
 
             // is current player
@@ -65,14 +67,14 @@ export class GameScene extends Phaser.Scene {
 
                 playerSchema.onChange(() => {
                     playerClient.player = PlayerFactory.createPlayer(playerSchema);
-                    playerClient.update();
+                    playerClient.update(this.room.sessionId);
                 });
 
             } else {
                 // listening for server updates
                 playerSchema.onChange(() => {
                     playerClient.player = PlayerFactory.createPlayer(playerSchema);
-                    playerClient.update();
+                    playerClient.update(this.room.sessionId);
                 });
             }
         });
@@ -118,6 +120,17 @@ export class GameScene extends Phaser.Scene {
                 console.log(this.arrowsEntities)
             }
         });
+
+        // Handle number key input for selecting inventory items
+        this.input.keyboard.on('keydown', (event) => {
+            const key = event.key;
+            console.log("key pressed", key);
+            if (key >= '1' && key <= '9') {
+                const index = parseInt(key) - 1;
+                this.inputPayload.selectedItemIndex = index;
+            }
+        });
+
 
         // this.cameras.main.startFollow(this.ship, true, 0.2, 0.2);
         // this.cameras.main.setZoom(1);
@@ -176,26 +189,29 @@ export class GameScene extends Phaser.Scene {
         this.currentPlayer.player.addInput(this.inputPayload);
         this.currentPlayer.player.processInputQueue();
 
-        if(Phaser.Input.Keyboard.JustDown(this.cursorKeys.space)){
-            this.handleSwordSwing();
-        }
 
-        if(Phaser.Input.Keyboard.JustDown(this.cursorKeys.shift)){
-            this.handleBowShot();
+        if (this.input.activePointer.isDown) {
+            this.handleItemAction();
         }
-
-        this.currentPlayer.update();
 
         for (let sessionId in this.playerEntities) {
-            // interpolate all player entities, but current player
-            if (sessionId === this.room.sessionId) {
-                continue;
-            }
-            this.playerEntities[sessionId].update();
+            this.playerEntities[sessionId].update(this.room.sessionId);
         }
 
         for(let arrowId in this.arrowsEntities){
             this.arrowsEntities[arrowId].update();
+        }
+    }
+
+    handleItemAction() {
+        const selectedItem = this.currentPlayer.player.getSelectedItem();
+        if (selectedItem) {
+            // Perform action based on the selected item
+            if (selectedItem.name === "Sword") {
+                this.handleSwordSwing();
+            } else if (selectedItem.name === "Bow") {
+                this.handleBowShot();
+            }
         }
     }
 

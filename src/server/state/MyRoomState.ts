@@ -3,6 +3,17 @@ import {Player} from "../../shared/entities/Player";
 import {Item} from "../../shared/entities/Item";
 import {Arrow} from "../../shared/entities/Arrow";
 import {v4 as uuidv4} from "uuid";
+import {Inventory} from "../../shared/entities/Inventory";
+
+export class InventorySchema extends Schema {
+    @type(["string"]) items = new ArraySchema<string>();
+    @type("number") selectedItemIndex: number = 0;
+
+    fromInventory(inventory: Inventory) {
+        this.items = new ArraySchema<string>(...inventory.items.map(item => item ? item.name : ""));
+        this.selectedItemIndex = inventory.selectedItemIndex;
+    }
+}
 
 export class ArrowSchema extends Schema {
     @type("string") id: string;
@@ -38,19 +49,7 @@ export interface InputData {
     mouseX: number;
     mouseY: number;
     tick: number;
-}
-
-export class ItemSchema extends Schema {
-    @type("string") name: string;
-
-    constructor(name: string) {
-        super();
-        this.name = name;
-    }
-
-    fromItem(item: Item) {
-        this.name = item.name;
-    }
+    selectedItemIndex: number;
 }
 
 export class PlayerSchema extends Schema {
@@ -60,7 +59,7 @@ export class PlayerSchema extends Schema {
     @type("number") hp: number;
     @type("number") rotation: number;
     @type("number") tick: number;
-    @type([ItemSchema]) inventory: ItemSchema[] = [];
+    @type(InventorySchema) inventory: InventorySchema = new InventorySchema();
 
     inputQueue: InputData[] = [];
 
@@ -71,14 +70,8 @@ export class PlayerSchema extends Schema {
         this.hp = player.hp;
         this.rotation = player.rotation;
         this.tick = player.inputQueue.length > 0 ? player.inputQueue[player.inputQueue.length - 1].tick : this.tick;
-        this.inventory = player.inventory.map(item => {
-            const itemSchema = new ItemSchema(item.name);
-            itemSchema.fromItem(item);
-            return itemSchema;
-        });
-
+        this.inventory.fromInventory(player.inventory);
     }
-
 }
 
 export class MyRoomState extends Schema {

@@ -132,7 +132,6 @@ export class MyRoom extends Room<MyRoomState> {
     onJoin (client: Client, options: any) {
         console.log(client.sessionId, "joined!");
         const player = new Player(Math.random() * this.state.mapWidth, Math.random() * this.state.mapHeight);
-        player.addItem(new Sword());
         player.sessionId = client.sessionId;
 
 
