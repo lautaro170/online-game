@@ -6,6 +6,10 @@ import {PlayerFactory} from "../../shared/factories/PlayerFactory";
 import {Sword} from "../../shared/entities/Sword";
 import {setItem} from "colyseus.js/lib/Storage";
 import {Arrow} from "../../shared/entities/Arrow";
+import {GameService} from "../services/GameService";
+import {BowService} from "../services/BowService";
+import {SwordService} from "../services/SwordService";
+import {ItemRegistry} from "../services/ItemRegistry";
 
 class State extends Schema {
 }
@@ -29,60 +33,23 @@ export class MyRoom extends Room<MyRoomState> {
         });
 
         this.onMessage("bowShot", (client, message) => {
+            const gameService = new GameService(this.state);
+
+            const bowService = ItemRegistry["Bow"]();
             const playerSchema = this.state.players.get(client.sessionId);
             if (!playerSchema) return;
+            bowService.use(PlayerFactory.createPlayer(playerSchema), gameService);
 
-            const player = PlayerFactory.createPlayer(playerSchema);
-            if (player.bow.canShoot()) {
-                const arrow = new Arrow(player.x, player.y, player.rotation, client.sessionId);
-                const arrowSchema = ArrowSchema.fromArrow(arrow);
-                this.state.arrows.push(arrowSchema);
-                console.log("added arrow id", arrowSchema.id);
-                console.log("Player", client.sessionId, "shot an arrow!");
-            }
         });
 
         this.onMessage("swordSwing", (client, message) => {
-            console.log("starting swordSwing server")
-            const attackerPlayerSchema = this.state.players.get(client.sessionId);
-            if (!attackerPlayerSchema) return;
+            const gameService = new GameService(this.state);
 
-            const attackerPlayer = PlayerFactory.createPlayer(attackerPlayerSchema);
-            if (attackerPlayer.swingSword()) {
-                this.state.players.forEach((targetPlayerSchema, sessionId) => {
-                    if (sessionId === client.sessionId) return;
+            const swordService = ItemRegistry["Sword"]();
+            const playerSchema = this.state.players.get(client.sessionId);
+            if (!playerSchema) return;
+            swordService.use(PlayerFactory.createPlayer(playerSchema), gameService);
 
-                    const targetPlayer = PlayerFactory.createPlayer(targetPlayerSchema);
-                    const distance = this.distanceBetweenPlayers(attackerPlayer, targetPlayer);
-                    console.log("distance", distance);
-                    if (distance <= Sword.baseRange + 30) {
-                        // Calculate the angle between the attacker and the target
-                        const angleToTarget = Math.atan2(targetPlayer.y - attackerPlayer.y, targetPlayer.x - attackerPlayer.x);
-                        const angleDifference = ((angleToTarget - attackerPlayer.rotation + Math.PI) % (2 * Math.PI)) - Math.PI;
-
-                        // Check if the target is within the sword's swing angle
-                        if (Math.abs(angleDifference) <= (Sword.baseSwingAngle / 2) * (Math.PI / 180)) {
-                            targetPlayer.hp -= Sword.baseDamage;
-
-                            // Calculate knockback based on distance and attacker's rotation
-                            const maxKnockback = 50; // Maximum knockback value
-                            const knockback = maxKnockback * (1 - (distance / (Sword.baseRange + 20)));
-                            const knockbackX = Math.cos(attackerPlayer.rotation) * knockback;
-                            const knockbackY = Math.sin(attackerPlayer.rotation) * knockback;
-
-                            // Apply knockback to the target
-                            targetPlayer.x += knockbackX;
-                            targetPlayer.y += knockbackY;
-                            targetPlayerSchema.fromPlayer(targetPlayer);
-
-                            console.log("Player", client.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.hp);
-                            if(targetPlayer.hp <= 0){
-                                this.handlePlayerDeath(targetPlayerSchema);
-                            }
-                        }
-                    }
-                });
-            }
             this.broadcast("swordSwing", { sessionId: client.sessionId });
         });
 
@@ -148,10 +115,6 @@ export class MyRoom extends Room<MyRoomState> {
 
     onDispose() {
         console.log("room", this.roomId, "disposing...");
-    }
-
-    distanceBetweenPlayers(player1: Player, player2: Player): number {
-        return Math.sqrt(Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2));
     }
 
     handlePlayerDeath(playerSchema: PlayerSchema) {
