@@ -48,6 +48,7 @@ export interface InputData {
     down: false;
     mouseX: number;
     mouseY: number;
+    mouseClick: boolean;
     tick: number;
     selectedItemIndex: number;
 }

@@ -1,14 +1,17 @@
 import Phaser from "phaser";
 import { PlayerClient } from "./PlayerClient";
 import {Sword} from "../../shared/entities/Sword";
+import {Player} from "../../shared/entities/Player";
+import {ItemClient} from "../interfaces/ItemClient";
 
-export class SwordClient extends Phaser.GameObjects.Rectangle {
+export class SwordClient extends Phaser.GameObjects.Rectangle implements ItemClient{
+    name = "Sword";
     private isSwinging: boolean = false;
     private playerRotation: number = 0;
 
-    constructor(scene: Phaser.Scene, x: number, y: number) {
+    constructor(scene: Phaser.Scene, player:Player) {
        //use Sword.baseRange and Sword.baseSwingAngle, and sword.baseSize
-        super(scene, x + 20, y, Sword.baseRange, 5, 0xff0000); // Position the sword to the right of the player
+        super(scene, player.x + 20, player.y, Sword.baseRange, 5, 0xff0000); // Position the sword to the right of the player
 
         this.setOrigin(0, 0.5); // Set the origin to the left side of the sword
         scene.add.existing(this);
@@ -30,6 +33,9 @@ export class SwordClient extends Phaser.GameObjects.Rectangle {
         }
     }
 
+    use() {
+        this.swing();
+    }
     swing() {
         this.playerRotation = this.rotation;
         this.isSwinging = true;

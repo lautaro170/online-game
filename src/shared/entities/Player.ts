@@ -10,6 +10,7 @@ export interface InputData{
     down: boolean;
     mouseX: number;
     mouseY: number;
+    mouseClick: boolean;
     tick: number;
     selectedItemIndex: number;
 }
@@ -70,16 +71,8 @@ export class Player{
         }
     }
 
-    addItem(item: Item, index: number) {
-        this.inventory.addItem(item, index);
-    }
-
     getSelectedItem(): Item | null {
         return this.inventory.getSelectedItem();
-    }
-
-    selectItem(index: number) {
-        this.inventory.selectItem(index);
     }
 
     swingSword(): boolean {

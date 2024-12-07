@@ -68,9 +68,25 @@ export class MyRoom extends Room<MyRoomState> {
 
     fixedTick(timeStep: number) {
 
+        const gameService = new GameService(this.state);
+
         this.state.players.forEach(playerSchema => {
             const player = PlayerFactory.createPlayer(playerSchema);
+            const playerClicked = player.inputQueue.length > 0 && player.inputQueue[0].mouseClick;
+
             player.processInputQueue();
+
+            //if click detected, use item
+            if(playerClicked){
+                console.log("running special aciton");
+                const selectedItem = player.getSelectedItem();
+                const itemService = ItemRegistry[selectedItem.name]();
+                itemService.use(player, gameService);
+                this.broadcast("itemUsed", { sessionId: player.sessionId });
+
+            }
+
+
             playerSchema.fromPlayer(player);
         });
 

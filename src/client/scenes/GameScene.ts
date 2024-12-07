@@ -34,6 +34,7 @@ export class GameScene extends Phaser.Scene {
         down: false,
         mouseX: 0,
         mouseY: 0,
+        mouseClick: false,
         tick: undefined,
         selectedItemIndex:0
     };
@@ -88,10 +89,10 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-        this.room.onMessage("swordSwing", (message) => {
+        this.room.onMessage("itemUsed", (message) => {
             const playerClient = this.playerEntities[message.sessionId];
             if (playerClient) {
-                playerClient.playAttackAnimation();
+                playerClient.playUseItemAnimation();
             }
         });
 
@@ -182,16 +183,15 @@ export class GameScene extends Phaser.Scene {
         this.inputPayload.tick = this.currentTick;
         this.inputPayload.mouseX = this.input.mousePointer.x;
         this.inputPayload.mouseY = this.input.mousePointer.y;
+        this.inputPayload.mouseClick = this.input.activePointer.isDown;
         this.room.send(0, this.inputPayload);
-
-
 
         this.currentPlayer.player.addInput(this.inputPayload);
         this.currentPlayer.player.processInputQueue();
 
 
         if (this.input.activePointer.isDown) {
-            this.handleItemAction();
+            this.currentPlayer.playUseItemAnimation();
         }
 
         for (let sessionId in this.playerEntities) {
@@ -202,34 +202,4 @@ export class GameScene extends Phaser.Scene {
             this.arrowsEntities[arrowId].update();
         }
     }
-
-    handleItemAction() {
-        const selectedItem = this.currentPlayer.player.getSelectedItem();
-        if (selectedItem) {
-            // Perform action based on the selected item
-            if (selectedItem.name === "Sword") {
-                this.handleSwordSwing();
-            } else if (selectedItem.name === "Bow") {
-                this.handleBowShot();
-            }
-        }
-    }
-
-    handleSwordSwing() {
-        if (!this.currentPlayer) return;
-        console.log("trying to swing sword");
-        this.currentPlayer.playAttackAnimation();
-        console.log("swordSwing");
-        this.room.send("swordSwing", {});
-    }
-
-    handleBowShot() {
-        if (!this.currentPlayer) return;
-        console.log("trying to shoot bow");
-        //this.currentPlayer.shootBow();
-        console.log("bowShot");
-        this.room.send("bowShot", {});
-    }
-
-
 }

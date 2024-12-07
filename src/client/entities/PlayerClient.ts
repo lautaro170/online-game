@@ -4,21 +4,22 @@ import { SwordClient } from "./SwordClient";
 import {HpBarClient} from "./HpBarClient";
 import {BowClient} from "./BowClient";
 import {InventoryClient} from "./InventoryClient";
+import {ItemClient} from "../interfaces/ItemClient";
+import {ItemRegistry} from "../ItemRegistry";
 
 export class PlayerClient extends Phaser.GameObjects.Rectangle {
     player: Player;
     sword: SwordClient;
-    bow: BowClient;
     hpBar: HpBarClient;
     inventory: InventoryClient;
+    selectedItem: ItemClient;
 
 
     constructor(scene: Phaser.Scene, player: Player, currentSessionId : string ) {
         super(scene, player.x, player.y, 20, 20, 0x00ff00); // Example dimensions and color
         this.player = player;
-        this.bow = new BowClient(scene, player.x, player.y);
-        this.sword = new SwordClient(scene, player.x, player.y);
         this.hpBar = new HpBarClient(scene, player.x, player.y - 20, player.hp); // Position the HP bar above the player
+        this.reloadSelectedItem();
         if(player.sessionId === currentSessionId) {
             this.inventory = new InventoryClient(scene, player.inventory);
         }
@@ -32,8 +33,9 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
         this.setRotation(this.player.rotation);
         this.hpBar.setPosition(this.x, this.y - 20); // Update HP bar position
         this.hpBar.updateHp(this.player.hp); // Update HP bar value
-        this.sword.update(this);
-        this.bow.update(this);
+
+        this.reloadSelectedItem();
+        this.selectedItem.update(this);
         // Update inventory HUD only for the current player
         if (this.player.sessionId === currentSessionId) {
             console.log("updating inventory for user", this.player.sessionId);
@@ -42,11 +44,18 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
 
     }
 
-    playAttackAnimation() {
-        this.sword.swing();
+    playUseItemAnimation() {
+        this.selectedItem.use();
     }
 
-    shootBow() {
-        this.bow.shoot(this);
+    private reloadSelectedItem(){
+        if(this.player.getSelectedItem().name === this.selectedItem?.name){
+            return;
+        }
+
+        if(this.selectedItem){
+            this.selectedItem.destroy();
+        }
+        this.selectedItem = ItemRegistry[this.player.inventory.getSelectedItem().name](this.scene, this.player);
     }
 }
