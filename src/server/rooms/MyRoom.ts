@@ -1,14 +1,10 @@
 import { Room, Client } from "colyseus";
 import { Schema, type } from "@colyseus/schema";
-import {ArrowSchema, InputData, MyRoomState, PlayerSchema} from "../state/MyRoomState";
+import {MyRoomState, PlayerSchema} from "../state/MyRoomState";
 import {Player} from "../../shared/entities/Player";
 import {PlayerFactory} from "../../shared/factories/PlayerFactory";
-import {Sword} from "../../shared/entities/Sword";
-import {setItem} from "colyseus.js/lib/Storage";
 import {Arrow} from "../../shared/entities/Arrow";
 import {GameService} from "../services/GameService";
-import {BowService} from "../services/BowService";
-import {SwordService} from "../services/SwordService";
 import {ItemRegistry} from "../services/ItemRegistry";
 
 class State extends Schema {
@@ -30,27 +26,6 @@ export class MyRoom extends Room<MyRoomState> {
 
             // enqueue input to user input buffer.
             player.inputQueue.push(input);
-        });
-
-        this.onMessage("bowShot", (client, message) => {
-            const gameService = new GameService(this.state);
-
-            const bowService = ItemRegistry["Bow"]();
-            const playerSchema = this.state.players.get(client.sessionId);
-            if (!playerSchema) return;
-            bowService.use(PlayerFactory.createPlayer(playerSchema), gameService);
-
-        });
-
-        this.onMessage("swordSwing", (client, message) => {
-            const gameService = new GameService(this.state);
-
-            const swordService = ItemRegistry["Sword"]();
-            const playerSchema = this.state.players.get(client.sessionId);
-            if (!playerSchema) return;
-            swordService.use(PlayerFactory.createPlayer(playerSchema), gameService);
-
-            this.broadcast("swordSwing", { sessionId: client.sessionId });
         });
 
 
@@ -80,6 +55,7 @@ export class MyRoom extends Room<MyRoomState> {
             if(playerClicked){
                 console.log("running special aciton");
                 const selectedItem = player.getSelectedItem();
+                console.log("selected item cooldown pre:")
                 const itemService = ItemRegistry[selectedItem.name]();
                 itemService.use(player, gameService);
                 this.broadcast("itemUsed", { sessionId: player.sessionId });

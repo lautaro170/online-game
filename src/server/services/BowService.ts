@@ -4,18 +4,20 @@ import {Player} from "../../shared/entities/Player";
 import {PlayerFactory} from "../../shared/factories/PlayerFactory";
 import {Arrow} from "../../shared/entities/Arrow";
 import {ArrowSchema} from "../state/MyRoomState";
+import {Bow} from "../../shared/entities/Bow";
 
 export class BowService implements UsableItemServiceInterface {
     canUse(player: Player, gameService: GameService): boolean {
-        return player.inventory.selectedItemIndex === player.inventory.items.findIndex(item => item.name === "Bow");
+        return player.getSelectedItem().canUse();
     }
 
     use(player: Player, gameService: GameService): void {
+        if(player.getSelectedItem().getCooldown() === 0){
+            player.getSelectedItem().setCooldown(Bow.baseCooldown);
+        }
 
-        const playerSchema = gameService.state.players.get(player.sessionId);
-        if (!playerSchema) return;
-
-        if (player.bow.canShoot()) {
+        if (this.canUse(player, gameService)) {
+            player.getSelectedItem().use();
             const arrow = new Arrow(player.x, player.y, player.rotation, player.sessionId);
             const arrowSchema = ArrowSchema.fromArrow(arrow);
             gameService.state.arrows.push(arrowSchema);

@@ -3,22 +3,24 @@ import {GameService} from "./GameService";
 import {PlayerFactory} from "../../shared/factories/PlayerFactory";
 import {Sword} from "../../shared/entities/Sword";
 import {UsableItemServiceInterface} from "../interfaces/UsableItemServiceInterface";
+import {Bow} from "../../shared/entities/Bow";
 
 export class SwordService implements UsableItemServiceInterface {
     canUse(player: Player, gameService: GameService): boolean {
-        return true;
+        return player.getSelectedItem().canUse();
     }
 
-    use(player: Player, gameService: GameService): void {
+    use(attackerPlayer: Player, gameService: GameService): void {
 
-        console.log("starting swordSwing server")
-        const attackerPlayerSchema = gameService.state.players.get(player.sessionId);
-        if (!attackerPlayerSchema) return;
+        if(attackerPlayer.getSelectedItem().getCooldown() === 0){
+            attackerPlayer.getSelectedItem().setCooldown(Sword.baseCooldown);
+        }
 
-        const attackerPlayer = PlayerFactory.createPlayer(attackerPlayerSchema);
-        if (attackerPlayer.swingSword()) {
+        if (this.canUse(attackerPlayer, gameService)) {
+            attackerPlayer.getSelectedItem().use();
+
             gameService.state.players.forEach((targetPlayerSchema, sessionId) => {
-                if (sessionId === player.sessionId) return;
+                if (sessionId === attackerPlayer.sessionId) return;
 
                 const targetPlayer = PlayerFactory.createPlayer(targetPlayerSchema);
                 const distance = this.distanceBetweenPlayers(attackerPlayer, targetPlayer);
@@ -43,7 +45,7 @@ export class SwordService implements UsableItemServiceInterface {
                         targetPlayer.y += knockbackY;
                         targetPlayerSchema.fromPlayer(targetPlayer);
 
-                        console.log("Player", player.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.hp);
+                        console.log("Player", attackerPlayer.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.hp);
                         if(targetPlayer.hp <= 0){
                             //this.handlePlayerDeath(targetPlayerSchema);
                         }

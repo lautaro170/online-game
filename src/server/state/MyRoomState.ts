@@ -5,12 +5,36 @@ import {Arrow} from "../../shared/entities/Arrow";
 import {v4 as uuidv4} from "uuid";
 import {Inventory} from "../../shared/entities/Inventory";
 
+
+export class ItemSchema extends Schema {
+    @type("string") name: string;
+    @type("number") cooldown: number = 0;
+    @type("number") lastUsed: number = 0;
+
+    constructor() {
+        super();
+    }
+
+    fromItem(item: Item) {
+        this.name = item.name;
+        this.cooldown = item.getCooldown();
+        this.lastUsed = item.getLastUsed();
+    }
+
+    static fromItem(item: Item):ItemSchema {
+        let itemSchema = new ItemSchema();
+        itemSchema.fromItem(item);
+        return itemSchema;
+    }
+}
+
+
 export class InventorySchema extends Schema {
-    @type(["string"]) items = new ArraySchema<string>();
+    @type([ItemSchema]) items = new ArraySchema<ItemSchema>();
     @type("number") selectedItemIndex: number = 0;
 
     fromInventory(inventory: Inventory) {
-        this.items = new ArraySchema<string>(...inventory.items.map(item => item ? item.name : ""));
+        this.items = new ArraySchema<ItemSchema>(...inventory.items.map(item => ItemSchema.fromItem(item)));
         this.selectedItemIndex = inventory.selectedItemIndex;
     }
 }

@@ -26,7 +26,6 @@ export class Player{
     inputQueue: InputData[];
     tick: number;
     inventory: Inventory = new Inventory();
-    bow: Bow = new Bow();
 
     constructor(x:number, y:number){
         this.x = x;

@@ -42,7 +42,7 @@ export class SwordClient extends Phaser.GameObjects.Rectangle implements ItemCli
         this.scene.tweens.add({
             targets: this,
             rotation: { from: this.playerRotation - Phaser.Math.DegToRad(Sword.baseSwingAngle/2), to: this.playerRotation + Phaser.Math.DegToRad(Sword.baseSwingAngle/2) },
-            duration: 200,
+            duration: Sword.baseCooldown,
             yoyo: true,
             onComplete: () => {
                 this.isSwinging = false;

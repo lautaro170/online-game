@@ -12,7 +12,7 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
     sword: SwordClient;
     hpBar: HpBarClient;
     inventory: InventoryClient;
-    selectedItem: ItemClient;
+    selectedItem: null | ItemClient = null;
 
 
     constructor(scene: Phaser.Scene, player: Player, currentSessionId : string ) {
@@ -35,7 +35,10 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
         this.hpBar.updateHp(this.player.hp); // Update HP bar value
 
         this.reloadSelectedItem();
-        this.selectedItem.update(this);
+
+        if(this.selectedItem){
+            this.selectedItem.update(this);
+        }
         // Update inventory HUD only for the current player
         if (this.player.sessionId === currentSessionId) {
             console.log("updating inventory for user", this.player.sessionId);
@@ -45,11 +48,13 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
     }
 
     playUseItemAnimation() {
+        if(!this.selectedItem) return;
+
         this.selectedItem.use();
     }
 
     private reloadSelectedItem(){
-        if(this.player.getSelectedItem().name === this.selectedItem?.name){
+        if(this.player.getSelectedItem()?.name === this.selectedItem?.name){
             return;
         }
 
