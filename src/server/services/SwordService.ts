@@ -32,7 +32,7 @@ export class SwordService implements UsableItemServiceInterface {
 
                     // Check if the target is within the sword's swing angle
                     if (Math.abs(angleDifference) <= (Sword.baseSwingAngle / 2) * (Math.PI / 180)) {
-                        targetPlayer.hp -= Sword.baseDamage;
+                        targetPlayer.currentHp -= Sword.baseDamage;
 
                         // Calculate knockback based on distance and attacker's rotation
                         const maxKnockback = 50; // Maximum knockback value
@@ -45,8 +45,8 @@ export class SwordService implements UsableItemServiceInterface {
                         targetPlayer.y += knockbackY;
                         targetPlayerSchema.fromPlayer(targetPlayer);
 
-                        console.log("Player", attackerPlayer.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.hp);
-                        if(targetPlayer.hp <= 0){
+                        console.log("Player", attackerPlayer.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.currentHp);
+                        if(targetPlayer.currentHp <= 0){
                             //this.handlePlayerDeath(targetPlayerSchema);
                         }
                     }

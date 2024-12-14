@@ -7,8 +7,6 @@ import {Arrow} from "../../shared/entities/Arrow";
 import {GameService} from "../services/GameService";
 import {ItemRegistry} from "../services/ItemRegistry";
 
-class State extends Schema {
-}
 
 export class MyRoom extends Room<MyRoomState> {
     fixedTimeStep = 1000 / 60;
@@ -49,6 +47,13 @@ export class MyRoom extends Room<MyRoomState> {
             const player = PlayerFactory.createPlayer(playerSchema);
             const playerClicked = player.inputQueue.length > 0 && player.inputQueue[0].mouseClick;
 
+            // run passive items
+            player.inventory.getPassiveItems().forEach(item => {
+                console.log("running passive item", item.name);
+                const itemService = ItemRegistry[item.name]();
+                itemService.use(player, gameService);
+            });
+
             player.processInputQueue();
 
             //if click detected, use item
@@ -74,11 +79,11 @@ export class MyRoom extends Room<MyRoomState> {
             this.state.players.forEach(playerSchema => {
                 const player = PlayerFactory.createPlayer(playerSchema);
                 if (arrow.ownerId !== playerSchema.sessionId && arrow.checkCollision(player)) {
-                    player.hp -= arrow.damage;
+                    player.currentHp -= arrow.damage;
                     playerSchema.fromPlayer(player);
                     this.state.arrows.splice(index, 1);
                     console.log("Arrow hit player", playerSchema.sessionId, "for", arrow.damage, "damage!");
-                    if(playerSchema.hp <= 0){
+                    if(playerSchema.currentHp <= 0){
                         this.handlePlayerDeath(playerSchema);
                     }
 
@@ -113,7 +118,7 @@ export class MyRoom extends Room<MyRoomState> {
         const player = PlayerFactory.createPlayer(playerSchema);
         player.x = Math.random() * this.state.mapWidth;
         player.y = Math.random() * this.state.mapHeight;
-        player.hp = 100;
+        player.currentHp = 100;
         playerSchema.fromPlayer(player);
         console.log("Player", "died and respawned!");
     }

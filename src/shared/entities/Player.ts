@@ -1,7 +1,6 @@
 import {Item} from "./Item";
-import {Sword} from "./Sword";
-import {Bow} from "./Bow";
 import {Inventory} from "./Inventory";
+import {PlayerStats} from "./PlayerStats";
 
 export interface InputData{
     left: boolean;
@@ -21,23 +20,26 @@ export class Player{
     x: number;
     y: number;
     rotation: number;
-    hp: number;
+    currentHp = 100;
     velocity: number;
     inputQueue: InputData[];
     tick: number;
     inventory: Inventory = new Inventory();
+    playerStats: PlayerStats = new PlayerStats();
 
     constructor(x:number, y:number){
         this.x = x;
         this.y = y;
-        this.hp = 100;
         this.rotation = 0;
-        this.velocity = 10;
         this.tick = 0;
         this.inputQueue = [];
         this.inventory.addItem(new Item("Sword"), 0);
         this.inventory.addItem(new Item("Bow"), 1);
+        this.inventory.addItem(new Item("speedMedallion", "passive"), 2);
+    }
 
+    getMovementSpeed(): number {
+        return this.playerStats.getMovementSpeed();
     }
 
     //add a new input to the queue
@@ -52,15 +54,15 @@ export class Player{
         //dequeue player inputs
         while(input = this.inputQueue.shift()){
             if(input.left){
-                this.x -= this.velocity;
+                this.x -= this.getMovementSpeed();
             }else if(input.right){
-                this.x += this.velocity;
+                this.x += this.getMovementSpeed();
             }
 
             if(input.up){
-                this.y -= this.velocity;
+                this.y -= this.getMovementSpeed();
             }else if(input.down){
-                this.y += this.velocity;
+                this.y += this.getMovementSpeed();
             }
 
             //make the player look at the direction of the mouse based on input.mouseX and input.mouseY
@@ -73,11 +75,4 @@ export class Player{
     getSelectedItem(): Item | null {
         return this.inventory.getSelectedItem();
     }
-
-    swingSword(): boolean {
-        console.log("trying to swing sword -- player", "inventory", this.inventory);
-
-        return true;
-    }
-
 }

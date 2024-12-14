@@ -18,7 +18,7 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
     constructor(scene: Phaser.Scene, player: Player, currentSessionId : string ) {
         super(scene, player.x, player.y, 20, 20, 0x00ff00); // Example dimensions and color
         this.player = player;
-        this.hpBar = new HpBarClient(scene, player.x, player.y - 20, player.hp); // Position the HP bar above the player
+        this.hpBar = new HpBarClient(scene, player.x, player.y - 20, player.currentHp); // Position the HP bar above the player
         this.reloadSelectedItem();
         if(player.sessionId === currentSessionId) {
             this.inventory = new InventoryClient(scene, player.inventory);
@@ -32,7 +32,7 @@ export class PlayerClient extends Phaser.GameObjects.Rectangle {
         this.y = Phaser.Math.Linear(this.y, this.player.y, 0.2);
         this.setRotation(this.player.rotation);
         this.hpBar.setPosition(this.x, this.y - 20); // Update HP bar position
-        this.hpBar.updateHp(this.player.hp); // Update HP bar value
+        this.hpBar.updateHp(this.player.currentHp); // Update HP bar value
 
         this.reloadSelectedItem();
 

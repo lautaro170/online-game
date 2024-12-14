@@ -2,10 +2,12 @@ import {CooldownComponent} from "./components/CooldownComponent";
 
 export class Item {
     name: string;
+    type: "active" | "passive";
     cooldownComponent: CooldownComponent = new CooldownComponent(0, 0);
 
-    constructor(name: string) {
+    constructor(name: string, type: "active" | "passive" = "active") {
         this.name = name;
+        this.type = type;
     }
 
     setCooldown(cooldown: number, lastUsed: number = 0) {
