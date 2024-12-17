@@ -50,7 +50,15 @@ export class GameScene extends Phaser.Scene {
 
     async create() {
         this.cursorKeys = this.input.keyboard.createCursorKeys();
-        this.debugFPS = this.add.text(4, 4, "", { color: "#ff0000", });
+        this.debugFPS = this.add.text(4, 4, "", { color: "#ff0000", }).setScrollFactor(0);;
+
+
+        const graphics = this.add.graphics();
+
+        // Set the color for the walkable area
+        graphics.fillStyle(0xacacac, 1); // Green color
+        graphics.fillRect(50, 50, 1900, 1900);
+
 
         // connect with the room
         await this.connect();
@@ -70,6 +78,12 @@ export class GameScene extends Phaser.Scene {
                     playerClient.player = PlayerFactory.createPlayer(playerSchema);
                     playerClient.update(this.room.sessionId);
                 });
+
+                // Set camera to follow the player
+                this.cameras.main.startFollow(this.currentPlayer, true, 0.1, 0.1);
+                this.cameras.main.setZoom(1);
+                this.cameras.main.setBounds(0, 0, 2000, 2000);
+
 
             } else {
                 // listening for server updates
@@ -132,10 +146,6 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-
-        // this.cameras.main.startFollow(this.ship, true, 0.2, 0.2);
-        // this.cameras.main.setZoom(1);
-        this.cameras.main.setBounds(0, 0, 800, 600);
     }
 
     async connect() {
@@ -181,8 +191,8 @@ export class GameScene extends Phaser.Scene {
         this.inputPayload.up = this.cursorKeys.up.isDown;
         this.inputPayload.down = this.cursorKeys.down.isDown;
         this.inputPayload.tick = this.currentTick;
-        this.inputPayload.mouseX = this.input.mousePointer.x;
-        this.inputPayload.mouseY = this.input.mousePointer.y;
+        this.inputPayload.mouseX = this.input.mousePointer.x + this.cameras.main.scrollX;
+        this.inputPayload.mouseY = this.input.mousePointer.y + this.cameras.main.scrollY;
         this.inputPayload.mouseClick = this.input.activePointer.isDown;
         this.room.send(0, this.inputPayload);
 

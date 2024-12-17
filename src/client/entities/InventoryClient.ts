@@ -17,13 +17,13 @@ export class InventoryClient {
         for (let i = 0; i < 9; i++) {
             const x = 50 + i * 60;
             const y = this.scene.cameras.main.height - 50;
-            const box = this.scene.add.rectangle(x, y, 50, 50, 0x000000).setStrokeStyle(2, 0xffffff);
+            const box = this.scene.add.rectangle(x, y, 50, 50, 0x000000).setStrokeStyle(2, 0xffffff).setScrollFactor(0);
             this.hudElements.push(box);
-            this.scene.add.text(x - 10, y - 10, (i + 1).toString(), { color: "#ffffff" });
+            this.scene.add.text(x - 10, y - 10, (i + 1).toString(), { color: "#ffffff" }).setScrollFactor(0);
         }
         const selectedIndex = inventory.selectedItemIndex;
 
-        this.selectedItemHighlight = this.scene.add.rectangle(50 + selectedIndex * 60, this.scene.cameras.main.height - 50, 50, 50, 0xffffff, 0.2).setStrokeStyle(2, 0xffff00);
+        this.selectedItemHighlight = this.scene.add.rectangle(50 + selectedIndex * 60, this.scene.cameras.main.height - 50, 50, 50, 0xffffff, 0.2).setStrokeStyle(2, 0xffff00).setScrollFactor(0);
     }
 
     update(inventory:Inventory) {
