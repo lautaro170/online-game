@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { Client } from "colyseus.js";
 import {GameScene} from "./scenes/GameScene";
 
-const client = new Client("ws://localhost:2567");
+const client = new Client("ws://192.168.100.9:2567");
 
 client.joinOrCreate("part1_room").then(room => {
     console.log("joined successfully", room);

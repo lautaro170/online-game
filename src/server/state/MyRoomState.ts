@@ -5,7 +5,26 @@ import {Arrow} from "../../shared/entities/Arrow";
 import {v4 as uuidv4} from "uuid";
 import {Inventory} from "../../shared/entities/Inventory";
 import {PlayerStats} from "../../shared/entities/PlayerStats";
+import {Wall} from "../../shared/entities/Wall";
 
+
+export class WallSchema extends Schema{
+    @type("number") x: number;
+    @type("number") y: number;
+    @type("number") hp: number;
+    @type("string") id: string;
+
+    constructor() {
+        super();
+        this.id = uuidv4();
+    }
+
+    fromWall(wall: Wall) {
+        this.x = wall.x;
+        this.y = wall.y;
+        this.hp = wall.hp;
+    }
+}
 
 export class ItemSchema extends Schema {
     @type("string") name: string;
@@ -136,6 +155,6 @@ export class MyRoomState extends Schema {
 
     @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
     @type([ArrowSchema]) arrows = new ArraySchema<ArrowSchema>();
-
+    @type([WallSchema]) walls = new ArraySchema<WallSchema>();
 
 }

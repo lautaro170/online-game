@@ -35,7 +35,8 @@ export class Player{
         this.inputQueue = [];
         this.inventory.addItem(new Item("Sword"), 0);
         this.inventory.addItem(new Item("Bow"), 1);
-        this.inventory.addItem(new Item("speedMedallion", "passive"), 2);
+        this.inventory.addItem(new Item("WallPlacer"), 2)
+        this.inventory.addItem(new Item("speedMedallion", "passive"), 3);
     }
 
     getMovementSpeed(): number {

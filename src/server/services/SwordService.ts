@@ -47,7 +47,7 @@ export class SwordService implements UsableItemServiceInterface {
 
                         console.log("Player", attackerPlayer.sessionId, "hit Player", sessionId, "for", 10, "damage!", "new HP:", targetPlayerSchema.currentHp);
                         if(targetPlayer.currentHp <= 0){
-                            //this.handlePlayerDeath(targetPlayerSchema);
+                            gameService.handlePlayerDeath(targetPlayerSchema);
                         }
                     }
                 }

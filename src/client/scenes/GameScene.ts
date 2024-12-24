@@ -10,11 +10,13 @@
 import Phaser from "phaser";
 import {Client, Room} from "colyseus.js";
 import {BACKEND_URL} from "../backend";
-import {ArrowSchema, PlayerSchema} from "../../server/state/MyRoomState";
+import {ArrowSchema, PlayerSchema, WallSchema} from "../../server/state/MyRoomState";
 import {PlayerFactory} from "../../shared/factories/PlayerFactory";
 import {PlayerClient} from "../entities/PlayerClient";
 import {ArrowClient} from "../entities/ArrowClient";
 import {ArrowFactory} from "../../shared/factories/ArrowFactory";
+import {Wall} from "../../shared/entities/Wall";
+import {WallClient} from "../entities/WallClient";
 
 export class GameScene extends Phaser.Scene {
     room: Room;
@@ -22,6 +24,8 @@ export class GameScene extends Phaser.Scene {
     currentPlayer: PlayerClient;
     playerEntities: { [sessionId: string]: PlayerClient } = {};
     arrowsEntities: { [ownerId: string]: ArrowClient } = {};
+    wallsEntities: { [ownerId: string]: WallClient } = {};
+
     debugFPS: Phaser.GameObjects.Text;
 
     remoteRef: Phaser.GameObjects.Rectangle;
@@ -109,6 +113,22 @@ export class GameScene extends Phaser.Scene {
                 playerClient.playUseItemAnimation();
             }
         });
+
+        this.room.state.walls.onAdd((wallSchema: WallSchema) =>{
+            let wall = new Wall(wallSchema.x, wallSchema.y, wallSchema.hp);
+
+            const wallClient = new WallClient(this, wall);
+            console.log("wall added", wallSchema.id);
+
+            this.wallsEntities[wallSchema.id] = wallClient;
+
+            wallSchema.onChange(() => {
+                let wall = new Wall(wallSchema.x, wallSchema.y, wallSchema.hp);
+                const wallClient = new WallClient(this, wall);
+
+                wallClient.update();
+            });
+        })
 
         this.room.state.arrows.onAdd((arrowSchema : ArrowSchema) => {
             const arrow = ArrowFactory.createArrow(arrowSchema);
